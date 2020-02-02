@@ -8,6 +8,7 @@ cd("/home/swojcik/github/mm2020.jl")
 @test typeof(effstats) == DataFrame
 @test size(effstats) == (10628, 16)
 
+# Now, study matchups
 
 ###########################################################3
 # what functions do we need?

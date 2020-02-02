@@ -1,22 +1,20 @@
 """
 This file is responsible for creating basic ncaa seeds and for creating the outcome 'result'
 """
-import numpy as np # linear algebra
-import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
-from sklearn.linear_model import LogisticRegression
-import matplotlib.pyplot as plt
-from sklearn.utils import shuffle
-from sklearn.model_selection import GridSearchCV
+using DataFrames, CSVFiles
 
 #data_dir = '../input/'
-def historic_matchups():
+function historic_matchups(df_path = "data/DataFiles/NCAATourneyCompactResults.csv"):
 	print("loading data..")
-	df_tour = pd.read_csv('data/DataFiles/NCAATourneyCompactResults.csv')
-	df_tour['Diff_HistScore'] = df_tour['WScore'] - df_tour['LScore']
-	df_tour.drop(labels=['DayNum', 'WScore', 'LScore', 'WLoc', 'NumOT'], inplace=True, axis=1)
+	df_tour = load(df_path) |> DataFrame;
+	df_tour.Diff_HistScore = df_tour.WScore - df_tour.LScore
+	deletecols!(df_tour, [:DayNum, :WScore, :LScore, :WLoc, :NumOT])
 
 	print("creating historical matchups...")
 	df_win = df_seeds.rename(columns={'TeamID':'WTeamID', 'seed_int':'WSeed'})
+	df_win = copy(df_tour)
+	rename!(df_win, :WTeamID => :TeamID, :WSeed => :seed_int)
+	altnames = [Symbol(replace(String(x), "W" => "")) for x in names(df_tour)]
 	df_losss = df_seeds.rename(columns={'TeamID':'LTeamID', 'seed_int':'LSeed'})
 	df_dummy = pd.merge(left=df_tour, right=df_winseeds, how='left', on=['Season', 'WTeamID'])
 	df_concat = pd.merge(left=df_dummy, right=df_lossseeds, on=['Season', 'LTeamID'])

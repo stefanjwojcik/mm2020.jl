@@ -5,7 +5,6 @@
 This file is responsible for creating 'advanced' features related to team efficiencies
 """
 
-
 function eff_stats(df_path = "data/DataFiles/RegularSeasonDetailedResults.csv")
 	println("loading...")
 	# read the file
@@ -62,9 +61,9 @@ function eff_stats(df_path = "data/DataFiles/RegularSeasonDetailedResults.csv")
 	df.WRP = (df.WDR + df.WOR) ./ (df.WDR + df.WDR + df.LDR + df.LOR)
 	df.LRP = (df.LDR + df.LOR) ./ (df.WDR + df.WDR + df.LDR + df.LOR)
 	# Drop original measures
-	delete!(df, [:WFGM, :WFGA, :WFGM3, :WFGA3, :WFTM,
+	deletecols!(df, [:WFGM, :WFGA, :WFGM3, :WFGA3, :WFTM,
 	:WFTA, :WOR, :WDR, :WAst, :WTO, :WStl, :WBlk, :WPF, :WLoc])
-	delete!(df, [:LFGM, :LFGA, :LFGM3, :LFGA3, :LFTM,
+	deletecols!(df, [:LFGM, :LFGA, :LFGM3, :LFGA3, :LFTM,
 	:LFTA, :LOR, :LDR, :LAst, :LTO, :LStl, :LBlk, :LPF])
 	# take mean, min, max of each of the advanced measures
 	W_cols = [!in(x, [ "WScore"]) & occursin(r"W|Season", x)  for x in String.(names(df))]	# make win and loss average datasets
