@@ -6,39 +6,69 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import log_loss
 
-def elo_pred(elo1, elo2):
-	return(1. / (10. ** (-(elo1 - elo2) / 400.) + 1.))
+#def elo_pred(elo1, elo2):
+#	return(1. / (10. ** (-(elo1 - elo2) / 400.) + 1.))
 
-def expected_margin(elo_diff):
-	return((7.5 + 0.006 * elo_diff))
+function elo_pred(elo1::Float64, elo2::Float64)
+	1.0 / (10.0 ^ (-(elo1 - elo2) / 400.0) + 1.0)
+end
 
-def elo_update(w_elo, l_elo, margin):
-	K = 20.
+#def expected_margin(elo_diff):
+#	return((7.5 + 0.006 * elo_diff))
+
+function expected_margin(elo_diff)
+	(7.5 + 0.006 * elo_diff)
+end
+
+#def elo_update(w_elo, l_elo, margin):
+#	K = 20.
+#	elo_diff = w_elo - l_elo
+#	pred = elo_pred(w_elo, l_elo)
+#	mult = ((margin + 3.) ** 0.8) / expected_margin(elo_diff)
+#	update = K * mult * (1 - pred)
+#	return(pred, update)
+
+function elo_update(w_elo, l_elo, margin)
+	K = 20.0
 	elo_diff = w_elo - l_elo
 	pred = elo_pred(w_elo, l_elo)
-	mult = ((margin + 3.) ** 0.8) / expected_margin(elo_diff)
+	mult = ((margin + 3.0)^0.8) / expected_margin(elo_diff)
 	update = K * mult * (1 - pred)
-	return(pred, update)
+	pred, update
+end
 
 # FINAL ELO FOR THE SEASON: NEED TO LOOK IN WINNER OR LOSER POSITION
 
-def final_elo_per_season(df, team_id):
-	d = df.copy()
-	d = d.loc[(d.WTeamID == team_id) | (d.LTeamID == team_id), :]
-	d.sort_values(['Season', 'DayNum'], inplace=True)
-	d.drop_duplicates(['Season'], keep='last', inplace=True)
-	w_mask = d.WTeamID == team_id
-	l_mask = d.LTeamID == team_id
-	d['season_elo'] = None
-	d.loc[w_mask, 'season_elo'] = d.loc[w_mask, 'w_elo']
-	d.loc[l_mask, 'season_elo'] = d.loc[l_mask, 'l_elo']
-	out = pd.DataFrame({
-		'team_id': team_id,
-		'season': d.Season,
-		'season_elo': d.season_elo
-	})
-	return(out)
+#def final_elo_per_season(df, team_id):
+#	d = df.copy()
+#	d = d.loc[(d.WTeamID == team_id) | (d.LTeamID == team_id), :]
+#	d.sort_values(['Season', 'DayNum'], inplace=True)
+#	d.drop_duplicates(['Season'], keep='last', inplace=True)
+#	w_mask = d.WTeamID == team_id
+#	l_mask = d.LTeamID == team_id
+#	d['season_elo'] = None
+#	d.loc[w_mask, 'season_elo'] = d.loc[w_mask, 'w_elo']
+#	d.loc[l_mask, 'season_elo'] = d.loc[l_mask, 'l_elo']
+#	out = pd.DataFrame({
+#		'team_id': team_id,
+#		'season': d.Season,
+#		'season_elo': d.season_elo
+#	})
+#	return(out)
 
+function final_elo_per_season(df, team_id)
+	d = copy(df)
+	d = d[ (d.WTeamID .== team_id | d.LTeamID .== team_id ), : ]
+	sort!(d, (:Season, :DayNum), rev=true)
+	unique!(d, :Season)
+	w_mask = d.WteamID .== team_id
+	l_mask = d.LteamID .== team_id
+	d.season_elo = 0.0
+	d.season_elo[w_mask] .= d.w_elo[w_mask]
+	d.season_elo[l_mask] .= d.l_elo[l_mask]
+	out = DataFrame(team_id = team_id, season = d.Season, season_elo = d.season_elo)
+
+end
 
 class elo:
 	def __init__(self):
@@ -52,52 +82,64 @@ class elo:
 		self.elo_dict = dict(zip(list(self.team_ids), [1500] * len(self.team_ids)))
 		self.rs['margin'] = self.rs.WScore - self.rs.LScore
 
+mutable struct elo
+	data_path::String
+	rs::DataFrame
+	HOME_ADVANTAGE::Float64
+	team_ids::Array{String, 1}
+	elo_dict::Dict
+end
 	# I'm going to iterate over the games dataframe using
 	# index numbers, so want to check that nothing is out
 	# of order before I do that.
 
-	def iterate_games(self):
-		assert np.all(self.rs.index.values == np.array(range(self.rs.shape[0]))), "Index is out of order."
+function iterate_games(elo_obj::elo)
 
-		preds = []
-		w_elo = []
-		l_elo = []
+	# update the basic info
+	elo_obj.data_path = "data/DataFiles/RegularSeasonCompactResults.csv"
+	elo_obj.rs = load(data_path) |> DataFrame
+	elo_obj.HOME_ADVANTAGE = 100.0
+	elo_obj.team_ids
 
-		print("looping over every game in the dataframe")
-		# Loop over all rows of the games dataframe
-		for row in self.rs.itertuples():
+	preds = []
+	w_elo = []
+	l_elo = []
 
-			# Get key data from current row
-			w = row.WTeamID
-			l = row.LTeamID
-			margin = row.margin
-			wloc = row.WLoc
+	print("looping over every game in the dataframe")
+	# Loop over all rows of the games dataframe
+	#for row in self.rs.itertuples():
 
-			# Does either team get a home-court advantage?
-			w_ad, l_ad, = 0., 0.
-			if wloc == "H":
-				w_ad += self.HOME_ADVANTAGE
-			elif wloc == "A":
-				l_ad += self.HOME_ADVANTAGE
+	for row in eachrow(elo_obj.rs)
+		w = row.WTeamID
+		l = row.LTeamID
+		margin = row.margin
+		wloc = row.WLoc
 
-			# Get elo updates as a result of the game
-			pred, update = elo_update(self.elo_dict[w] + w_ad,
-									  self.elo_dict[l] + l_ad,
-									  margin)
-			self.elo_dict[w] += update
-			self.elo_dict[l] -= update
+		# Does either team get a home-court advantage?
+		w_ad, l_ad, = 0., 0.
+		if wloc == "H"
+			w_ad += elo_obj.HOME_ADVANTAGE
+		elseif wloc == "A"
+			l_ad += elo_obj.HOME_ADVANTAGE
+		end
+		# Get elo updates as a result of the game
+		pred, update = elo_update(elo_obj.elo_dict[w] + w_ad,
+								  elo_obj.elo_dict[l] + l_ad,
+								  margin)
+		elo_obj.elo_dict[w] += update
+		elo_obj.elo_dict[l] -= update
 
-			# Save prediction and new Elos for each round
-			preds.append(pred)
-			w_elo.append(self.elo_dict[w])
-			l_elo.append(self.elo_dict[l])
+		# Save prediction and new Elos for each round
+		push!(preds, pred)
+		push!(w_elo, elo_obj.elo_dict[w])
+		push!(l_elo, elo_obj.elo_dict[l])
+	end
 
-
-		self.rs['w_elo'] = w_elo
-		self.rs['l_elo'] = l_elo
-		print("done")
-		return(self.rs)
-
+	elo_obj.rs.w_elo = w_elo
+	elo_obj.rs.l_elo = l_elo
+	print("done")
+	return elo_obj
+end
 
 	def elo_ranks(self):
 		# load data

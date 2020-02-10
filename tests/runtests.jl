@@ -1,5 +1,8 @@
 using mm2020, Test
 
+# requires
+using CSVFiles, DataFrames, Statistics
+
 cd("/home/swojcik/github/mm2020.jl")
 # Test of the mm2020 package
 
