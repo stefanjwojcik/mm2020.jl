@@ -2,6 +2,7 @@
 
 ## FROM : https://www.kaggle.com/lnatml/feature-engineering-with-advanced-stats
 """
+eff_stats()
 This file is responsible for creating 'advanced' features related to team efficiencies
 """
 
