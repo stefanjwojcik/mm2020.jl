@@ -127,8 +127,6 @@ function elo_ranks(elo_obj::Elo)
 	season_elos = df_list[1] # create a stub dataset
 	[append!(season_elos, df_list[x]) for x in 2:length(df_list)] # append everything
 	# create difference scores
-	df_winelo = season_elos.rename(columns={'team_id':'WTeamID', 'season':'Season', 'season_elo': 'W_elo'})
-	df_losselo = season_elos.rename(columns={'team_id':'LTeamID', 'season':'Season', 'season_elo': 'L_elo'})
 	df_winelo, df_losselo = copy(season_elos), copy(season_elos)
 	rename!(df_winelo, :team_id => :WTeamID, :season => :Season, :season_elo => :W_elo)
 	rename!(df_losselo, :team_id => :LTeamID, :season => :Season, :season_elo => :L_elo)
@@ -137,15 +135,14 @@ function elo_ranks(elo_obj::Elo)
 	df_dummy = join(df_tour, df_winelo, on = [:Season, :WTeamID], kind = :left)
 	df_concat = join(df_dummy, df_losselo, on = [:Season, :LTeamID])
 	df_concat.Elo_diff = df_concat.W_elo - df_concat.L_elo
-	df_concat.drop(['W_elo', 'L_elo'], axis=1, inplace = True)
 	deletecols!(df_concat, [:W_elo, :L_elo])
 
 	df_wins = DataFrame()
-	df_wins = copy(df_concat[, : [:Season, :WTeamID, :LTeamID, :Elo_diff]])
+	df_wins = copy(df_concat[ :, [:Season, :WTeamID, :LTeamID, :Elo_diff]])
 	df_wins.Result = 1
 
 	df_losses = DataFrame()
-	df_losses = copy(df_concat[:, [:Season, :WTeamID, :LTeamID]])
+	df_losses = copy(df_concat[ :, [:Season, :WTeamID, :LTeamID]])
 	df_losses.Elo_diff = -1*df_concat.Elo_diff
 	df_losses.Result = 0
 

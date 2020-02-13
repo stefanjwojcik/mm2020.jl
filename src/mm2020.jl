@@ -9,7 +9,6 @@ module mm2020
 ##############################################################################
 
 using CSVFiles, DataFrames, Statistics
-import DataFrames: DataFrame
 
 ##############################################################################
 ##
@@ -19,6 +18,9 @@ import DataFrames: DataFrame
 
 export  eff_stats,
         make_seeds,
+        Elo,
+        elo_ranks
+
 
 
 ##############################################################################
@@ -29,5 +31,6 @@ export  eff_stats,
 
 include("efficiency.jl")
 include("seeds.jl")
+include("elo.jl")
 
 end # module
