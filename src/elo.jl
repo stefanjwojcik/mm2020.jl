@@ -2,7 +2,6 @@
 """
 This file is responsible for creating seasonal elo rankings as a predictive feature
 """
-using CSVFiles, DataFrames
 
 #def elo_pred(elo1, elo2):
 #	return(1. / (10. ** (-(elo1 - elo2) / 400.) + 1.))
