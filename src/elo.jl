@@ -2,9 +2,7 @@
 """
 This file is responsible for creating seasonal elo rankings as a predictive feature
 """
-import numpy as np
-import pandas as pd
-from sklearn.metrics import log_loss
+using CSVFiles, DataFrames
 
 #def elo_pred(elo1, elo2):
 #	return(1. / (10. ** (-(elo1 - elo2) / 400.) + 1.))
@@ -39,67 +37,46 @@ end
 
 # FINAL ELO FOR THE SEASON: NEED TO LOOK IN WINNER OR LOSER POSITION
 
-#def final_elo_per_season(df, team_id):
-#	d = df.copy()
-#	d = d.loc[(d.WTeamID == team_id) | (d.LTeamID == team_id), :]
-#	d.sort_values(['Season', 'DayNum'], inplace=True)
-#	d.drop_duplicates(['Season'], keep='last', inplace=True)
-#	w_mask = d.WTeamID == team_id
-#	l_mask = d.LTeamID == team_id
-#	d['season_elo'] = None
-#	d.loc[w_mask, 'season_elo'] = d.loc[w_mask, 'w_elo']
-#	d.loc[l_mask, 'season_elo'] = d.loc[l_mask, 'l_elo']
-#	out = pd.DataFrame({
-#		'team_id': team_id,
-#		'season': d.Season,
-#		'season_elo': d.season_elo
-#	})
-#	return(out)
-
-function final_elo_per_season(df, team_id)
+function final_elo_per_season(df::DataFrame, team_id::Int64)
 	d = copy(df)
-	d = d[ (d.WTeamID .== team_id | d.LTeamID .== team_id ), : ]
+	d = d[ (d.WTeamID .== team_id) .| (d.LTeamID .== team_id ), : ]
 	sort!(d, (:Season, :DayNum), rev=true)
 	unique!(d, :Season)
-	w_mask = d.WteamID .== team_id
-	l_mask = d.LteamID .== team_id
+	w_mask = d.WTeamID .== team_id
+	l_mask = d.LTeamID .== team_id
 	d.season_elo = 0.0
 	d.season_elo[w_mask] .= d.w_elo[w_mask]
 	d.season_elo[l_mask] .= d.l_elo[l_mask]
 	out = DataFrame(team_id = team_id, season = d.Season, season_elo = d.season_elo)
-
 end
 
-class elo:
-	def __init__(self):
-		self.data_path = "data/DataFiles/RegularSeasonCompactResults.csv"
-		self.rs = pd.read_csv(self.data_path)
-		self.HOME_ADVANTAGE = 100.
-		#self.K = 20.
-		self.team_ids = set(self.rs.WTeamID).union(set(self.rs.LTeamID))
-		# This dictionary will be used as a lookup for current
-		# scores while the algorithm is iterating through each game
-		self.elo_dict = dict(zip(list(self.team_ids), [1500] * len(self.team_ids)))
-		self.rs['margin'] = self.rs.WScore - self.rs.LScore
-
-mutable struct elo
+mutable struct Elo
 	data_path::String
 	rs::DataFrame
 	HOME_ADVANTAGE::Float64
-	team_ids::Array{String, 1}
+	team_ids::Array{Int64, 1}
 	elo_dict::Dict
+	function Elo(data_path::String="",
+		rs::DataFrame = DataFrame(),
+		HOME_ADVANTAGE::Float64 = 100.0,
+		team_ids::Array{Int64, 1} = Int64[],
+		elo_dict::Dict = Dict())
+        new(data_path, rs, HOME_ADVANTAGE, team_ids, elo_dict)
+    end
 end
 	# I'm going to iterate over the games dataframe using
 	# index numbers, so want to check that nothing is out
 	# of order before I do that.
 
-function iterate_games(elo_obj::elo)
+function iterate_games(elo_obj::Elo)
 
 	# update the basic info
 	elo_obj.data_path = "data/DataFiles/RegularSeasonCompactResults.csv"
-	elo_obj.rs = load(data_path) |> DataFrame
+	elo_obj.rs = load(elo_obj.data_path) |> DataFrame
+	elo_obj.rs.margin = elo_obj.rs.WScore - elo_obj.rs.LScore
 	elo_obj.HOME_ADVANTAGE = 100.0
-	elo_obj.team_ids
+	elo_obj.team_ids = unique([ elo_obj.rs.WTeamID ; elo_obj.rs.LTeamID ]) #all team ids
+	elo_obj.elo_dict = Dict(); [elo_obj.elo_dict[x] = 1500 for x in elo_obj.team_ids]
 
 	preds = []
 	w_elo = []
@@ -141,37 +118,39 @@ function iterate_games(elo_obj::elo)
 	return elo_obj
 end
 
-	def elo_ranks(self):
-		# load data
-		rs = self.iterate_games()
-		print("computing elo for each team..")
-		df_list = [final_elo_per_season(rs, id) for id in self.team_ids]
-		season_elos = pd.concat(df_list)
-		# create difference scores
-		df_winelo = season_elos.rename(columns={'team_id':'WTeamID', 'season':'Season', 'season_elo': 'W_elo'})
-		df_losselo = season_elos.rename(columns={'team_id':'LTeamID', 'season':'Season', 'season_elo': 'L_elo'})
-		# Merge in the compact results
-		df_tour = pd.read_csv('data/DataFiles/NCAATourneyCompactResults.csv')
-		df_dummy = pd.merge(left=df_tour, right=df_winelo, how='left', on=['Season', 'WTeamID'])
-		df_concat = pd.merge(left=df_dummy, right=df_losselo, on=['Season', 'LTeamID'])
-		df_concat['Elo_diff'] = df_concat.W_elo - df_concat.L_elo
-		df_concat.drop(['W_elo', 'L_elo'], axis=1, inplace = True)
+# this is a superior function
+function elo_ranks(elo_obj::Elo)
+	# load data
+	elo_obj = iterate_games(elo_obj)
+	print("computing elo for each team..")
+	df_list = [final_elo_per_season(elo_obj.rs, id) for id in elo_obj.team_ids]
+	season_elos = df_list[1] # create a stub dataset
+	[append!(season_elos, df_list[x]) for x in 2:length(df_list)] # append everything
+	# create difference scores
+	df_winelo = season_elos.rename(columns={'team_id':'WTeamID', 'season':'Season', 'season_elo': 'W_elo'})
+	df_losselo = season_elos.rename(columns={'team_id':'LTeamID', 'season':'Season', 'season_elo': 'L_elo'})
+	df_winelo, df_losselo = copy(season_elos), copy(season_elos)
+	rename!(df_winelo, :team_id => :WTeamID, :season => :Season, :season_elo => :W_elo)
+	rename!(df_losselo, :team_id => :LTeamID, :season => :Season, :season_elo => :L_elo)
+	# Merge in the compact results
+	df_tour = load("data/DataFiles/NCAATourneyCompactResults.csv") |> DataFrame
+	df_dummy = join(df_tour, df_winelo, on = [:Season, :WTeamID], kind = :left)
+	df_concat = join(df_dummy, df_losselo, on = [:Season, :LTeamID])
+	df_concat.Elo_diff = df_concat.W_elo - df_concat.L_elo
+	df_concat.drop(['W_elo', 'L_elo'], axis=1, inplace = True)
+	deletecols!(df_concat, [:W_elo, :L_elo])
 
-		df_wins = pd.DataFrame()
-		df_wins = df_concat[['Season',  'WTeamID',  'LTeamID', 'Elo_diff']]
-		df_wins['Result'] = 1
+	df_wins = DataFrame()
+	df_wins = copy(df_concat[, : [:Season, :WTeamID, :LTeamID, :Elo_diff]])
+	df_wins.Result = 1
 
+	df_losses = DataFrame()
+	df_losses = copy(df_concat[:, [:Season, :WTeamID, :LTeamID]])
+	df_losses.Elo_diff = -1*df_concat.Elo_diff
+	df_losses.Result = 0
 
-		df_losses = pd.DataFrame()
-		df_losses = df_concat[['Season',  'WTeamID',  'LTeamID']]
-		df_losses['Elo_diff'] = -df_concat['Elo_diff']
-		df_losses['Result'] = 0
+	df_out = [df_wins; df_losses]
 
-		df_out = pd.concat((df_wins, df_losses))
-
-		print("done")
-		return(df_out)
-
-#season_elos.sample(10)
-
-#season_elos.to_csv("season_elos.csv", index=None)
+	println("done")
+	df_out
+end
