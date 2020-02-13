@@ -122,5 +122,5 @@ function eff_stats(df_path = "data/DataFiles/RegularSeasonDetailedResults.csv")
 end
 
 # drop missing obs in the data
-dropmissing!(eff_stats())
+#dropmissing!(eff_stats())
 ################# JULIA ############
