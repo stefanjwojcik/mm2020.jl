@@ -118,7 +118,7 @@ function eff_stats(df_path = "data/DataFiles/RegularSeasonDetailedResults.csv")
 	df_losses.Result = 0
 
 	df_out = [df_wins; df_losses]
-	return df_out
+	return dropmissing(df_out)
 end
 
 # drop missing obs in the data
