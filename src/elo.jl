@@ -70,7 +70,7 @@ end
 function iterate_games(elo_obj::Elo)
 
 	# update the basic info
-	elo_obj.data_path = "data/DataFiles/RegularSeasonCompactResults.csv"
+	elo_obj.data_path = "data/MDataFiles_Stage1/MRegularSeasonCompactResults.csv"
 	elo_obj.rs = load(elo_obj.data_path) |> DataFrame
 	elo_obj.rs.margin = elo_obj.rs.WScore - elo_obj.rs.LScore
 	elo_obj.HOME_ADVANTAGE = 100.0
@@ -130,7 +130,7 @@ function elo_ranks(elo_obj::Elo)
 	rename!(df_winelo, :team_id => :WTeamID, :season => :Season, :season_elo => :W_elo)
 	rename!(df_losselo, :team_id => :LTeamID, :season => :Season, :season_elo => :L_elo)
 	# Merge in the compact results
-	df_tour = load("data/DataFiles/NCAATourneyCompactResults.csv") |> DataFrame
+	df_tour = load("data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 	df_dummy = join(df_tour, df_winelo, on = [:Season, :WTeamID], kind = :left)
 	df_concat = join(df_dummy, df_losselo, on = [:Season, :LTeamID])
 	df_concat.Elo_diff = df_concat.W_elo - df_concat.L_elo
