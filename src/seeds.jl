@@ -11,8 +11,8 @@ end
 function make_seeds()
 
 	print("loading data..")
-	df_seeds = load("data/MDataFiles_Stage1/MNCAATourneySeeds.csv") |> DataFrame
-	df_tour = load("data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
+	df_seeds = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneySeeds.csv") |> DataFrame
+	df_tour = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 
 	df_seeds.seed_int = seed_to_int.(df_seeds.Seed)
 
