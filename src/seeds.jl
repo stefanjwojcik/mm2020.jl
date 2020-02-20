@@ -50,7 +50,7 @@ function gen_seed_features(submission_sample, seeds_df)
 	seeds_df.seed_int = seed_to_int.(seeds_df.Seed)
 	for row in eachrow(submission_sample)
 		season, team1, team2 = parse.(Int, split(row.ID, "_"))
-		# get seeds for team1 and team 2
+		# get seeds for team1 and team
 		row1 = filter(row -> row[:Season] == season && row[:TeamID] == team1, seeds_df);
 		row2 = filter(row -> row[:Season] == season && row[:TeamID] == team2, seeds_df);
 		submission_sample.SeedDiff[getfield(row, :row)] = (row1.seed_int - row2.seed_int)[1]

@@ -11,6 +11,7 @@ using mm2020, CSVFiles, DataFrames
 # Make sure you can create all the features you desire
 
 seeds_features = make_seeds()
+eff_features = eff_stats()
 
 ### Loading the basic seeds data
 
