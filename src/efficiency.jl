@@ -96,7 +96,7 @@ function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/
 	return Wfdat, Lfdat, fdat
 end
 
-function get_eff_tourney_diffs(Wfdat, Lfdat, effdat)
+function get_eff_tourney_diffs(Wfdat, Lfdat, fdat)
 	# NEED TO MAKE THIS COMPATIBLE WITH THE REST OF THE DATA: TAKE DIFFS AND CONCATENATE
 	df_tour = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 	deletecols!(df_tour, [:DayNum, :WScore, :LScore, :WLoc, :NumOT])
