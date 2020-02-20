@@ -16,13 +16,13 @@ using CSVFiles, DataFrames, Statistics
 ##
 ##############################################################################
 
-export  get_eff_tourney_diffs,
+export  make_seeds,
+        get_seed_submission_diffs,
+        get_eff_tourney_diffs,
         get_eff_submission_diffs,
-        make_seeds,
-        gen_seed_features,
         Elo,
         get_elo_tourney_diffs,
-        get_elo_sub_diffs
+        get_elo_submission_diffs
 
 
 ##############################################################################
