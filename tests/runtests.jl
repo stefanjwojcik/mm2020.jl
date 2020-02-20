@@ -17,7 +17,7 @@ submission_sample = CSVFiles.load("/home/swojcik/github/mm2020.jl/data/MSampleSu
 seeds_features = make_seeds()
 # efficiency
 Wfdat, Lfdat, effdat = eff_stat_seasonal_means()
-eff_features = get_eff_tourney_diffs(Wfdat, Lfdat, fdat)
+eff_features = get_eff_tourney_diffs(Wfdat, Lfdat, effdat)
 # ELO
 season_elos = elo_ranks(Elo())
 elo_features = get_elo_tourney_diffs(season_elos)
