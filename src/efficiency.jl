@@ -6,7 +6,7 @@ eff_stats()
 This file is responsible for creating 'advanced' features related to team efficiencies
 """
 
-function eff_stats(df_path = "data/MDataFiles_Stage1/MRegularSeasonDetailedResults.csv")
+function eff_stats(df_path = "/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MRegularSeasonDetailedResults.csv")
 	println("loading...")
 	# read the file
 	df = load(df_path) |> DataFrame;
@@ -94,7 +94,7 @@ function eff_stats(df_path = "data/MDataFiles_Stage1/MRegularSeasonDetailedResul
 	Lfdat_names = Symbol.([x == "Season" ? x : "L"*x for x in String.(names(Lfdat))])
 	names!(Lfdat, Lfdat_names)
 	# NEED TO MAKE THIS COMPATIBLE WITH THE REST OF THE DATA: TAKE DIFFS AND CONCATENATE
-	df_tour = load("data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
+	df_tour = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 	deletecols!(df_tour, [:DayNum, :WScore, :LScore, :WLoc, :NumOT])
 	df = join(df_tour, Wfdat, on = [:Season, :WTeamID], kind = :left)
 	df = join(df, Lfdat, on = [:Season, :LTeamID], kind = :left)
