@@ -130,7 +130,7 @@ end
 #dropmissing!(eff_stats())
 ################# JULIA ############
 
-function get_eff_submission_diffs(submission_sample, effdat)
+function get_eff_submission_diffs(submission_sample, fdat)
 	final_out = DataFrame()
 	# The variables to take diffs
 	vars_to_add = [String(x) for x in names(fdat) if !in(x, [:Season, :TeamID])]
