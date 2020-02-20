@@ -18,9 +18,11 @@ using CSVFiles, DataFrames, Statistics
 
 export  make_seeds,
         get_seed_submission_diffs,
+        eff_stat_seasonal_means,
         get_eff_tourney_diffs,
         get_eff_submission_diffs,
         Elo,
+        elo_ranks,
         get_elo_tourney_diffs,
         get_elo_submission_diffs
 
