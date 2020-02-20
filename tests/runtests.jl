@@ -8,15 +8,25 @@ using mm2020, CSVFiles, DataFrames
 #   Difference in the variance of game to game free throw percentage.
 #   Difference in the variance of turnovers in the game to game free throw percentage.
 
-# Make sure you can create all the features you desire
+# Get the submission sample
+submission_sample = load("/home/swojcik/github/mm2020.jl/data/MSampleSubmissionStage1_2020.csv") |> DataFrame
 
+##############################################################
+# Create training features for valid historical data
+# seeds
 seeds_features = make_seeds()
-eff_features = eff_stats()
-
+# efficiency
+Wfdat, Lfdat, effdat = eff_stat_seasonal_means()
+eff_features = get_eff_tourney_diffs(Wfdat, Lfdat, fdat)
+# ELO
+season_elos = elo_ranks(Elo())
+elo_features = get_elo_tourney_diffs(season_elos)
 ### Loading the basic seeds data
 
-# Training and testing data
-ncaa_df = make_seeds()
+# Create features required to make submission predictions 
+seed_submission = get_seed_submission_diffs(submission_sample, seeds_df)
+eff_submission = get_eff_submission_diffs(submission_sample, effdat) #see above
+elo_submission = get_elo_submission_diffs(submission_sample, season_elos)
 
 # Submission data
 subsample = load("/home/swojcik/github/mm2020.jl/data/MSampleSubmissionStage1_2020.csv") |> DataFrame;

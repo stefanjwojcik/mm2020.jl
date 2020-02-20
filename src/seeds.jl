@@ -44,8 +44,7 @@ function make_seeds()
 end
 
 # returns the correct seed features for the submission sample
-function gen_seed_features(submission_sample, seeds_df)
-	submission_sample.SeedDiff = -99
+function get_seed_submission_diffs(submission_sample, seeds_df)
 	#seed to int
 	seeds_df.seed_int = seed_to_int.(seeds_df.Seed)
 	for row in eachrow(submission_sample)
@@ -55,5 +54,5 @@ function gen_seed_features(submission_sample, seeds_df)
 		row2 = filter(row -> row[:Season] == season && row[:TeamID] == team2, seeds_df);
 		submission_sample.SeedDiff[getfield(row, :row)] = (row1.seed_int - row2.seed_int)[1]
 	end
-	return submission_sample
+	return submission_sample[:, [:SeedDiff]]
 end

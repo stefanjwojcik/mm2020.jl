@@ -125,6 +125,10 @@ function elo_ranks(elo_obj::Elo)
 	df_list = [final_elo_per_season(elo_obj.rs, id) for id in elo_obj.team_ids]
 	season_elos = df_list[1] # create a stub dataset
 	[append!(season_elos, df_list[x]) for x in 2:length(df_list)] # append everything
+	season_elos
+end
+
+function get_elo_tourney_diffs(season_elos)
 	# create difference scores
 	df_winelo, df_losselo = copy(season_elos), copy(season_elos)
 	rename!(df_winelo, :team_id => :WTeamID, :season => :Season, :season_elo => :W_elo)
@@ -149,4 +153,17 @@ function elo_ranks(elo_obj::Elo)
 
 	println("done")
 	df_out
+end
+
+function get_elo_submission_diffs(submission_sample, season_elos)
+	submission_sample.Elo_diff = -99.0
+	for row in eachrow(submission_sample)
+		season, team1, team2 = parse.(Int, split(row.ID, "_"))
+		row1 = filter(row -> row[:season] == season && row[:team_id] == team1, season_elos);
+		row1 = mapcols(x -> mean(x), copy(select(row1, :season_elo))) #lambda fn for cols
+		row2 = filter(row -> row[:season] == season && row[:team_id] == team2, season_elos);
+		row2 = mapcols(x -> mean(x), copy(select(row2, :season_elo))) #lambda fn for cols
+		submission_sample.Elo_diff[getfield(row, :row)] = (row1.season_elo - row2.season_elo)[1]
+	end
+	return submission_sample[:, [:Elo_diff]]
 end

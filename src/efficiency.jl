@@ -96,7 +96,7 @@ function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/
 	return Wfdat, Lfdat, fdat
 end
 
-function get_eff_tourney_diffs(Wfdat, Lfdat, fdat)
+function get_eff_tourney_diffs(fdat)
 	# NEED TO MAKE THIS COMPATIBLE WITH THE REST OF THE DATA: TAKE DIFFS AND CONCATENATE
 	df_tour = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 	deletecols!(df_tour, [:DayNum, :WScore, :LScore, :WLoc, :NumOT])
@@ -130,49 +130,25 @@ end
 #dropmissing!(eff_stats())
 ################# JULIA ############
 
-function get_eff_submission_diffs(Wfdat, Lfdat, fdat)
-	# NEED TO MAKE THIS COMPATIBLE WITH THE REST OF THE DATA: TAKE DIFFS AND CONCATENATE
-	submission_sample = load("/home/swojcik/github/mm2020.jl/data/MSampleSubmissionStage1_2020.csv") |> DataFrame
+function get_eff_submission_diffs(submission_sample, effdat)
+	final_out = DataFrame()
 	# The variables to take diffs
 	vars_to_add = [String(x) for x in names(fdat) if !in(x, [:Season, :TeamID])]
 
 	for row in eachrow(submission_sample)
 		season, team1, team2 = parse.(Int, split(row.ID, "_"))
 		# filter each dataframe to get each team avg when winning/losing - team 1
-row1 = filter(row -> row[:Season] == season && row[:TeamID] == team1, fdat);
-row1 = mapcols(x -> mean(x), copy(select(row1, Symbol.(vars_to_add)))) #lambda fn for cols
-row2 = filter(row -> row[:Season] == season && row[:TeamID] == team2, fdat);
-row2 = mapcols(x -> mean(x), copy(select(row2, Symbol.(vars_to_add)))) #lambda fn for cols
-out = DataFrame()
-for var in vars_to_add
-	out[Symbol("Diff_"*var)] = row1[Symbol(var)]-row2[Symbol(var)]
-end
-
-
-
-	deletecols!(df_tour, [:DayNum, :WScore, :LScore, :WLoc, :NumOT])
-	df = join(df_tour, Wfdat, on = [:Season, :WTeamID], kind = :left)
-	df = join(df, Lfdat, on = [:Season, :LTeamID], kind = :left)
-
-	# Option to create two functions - one to create
-	df_concat = DataFrame()
-	vars_to_add = [String(x) for x in names(fdat) if !in(x, [:Season, :TeamID])]
-	for var in vars_to_add
-		df_concat[Symbol("Diff_"*var)] = df[Symbol("W"*var)]-df[Symbol("L"*var)]
+		row1 = filter(row -> row[:Season] == season && row[:TeamID] == team1, fdat);
+		row1 = mapcols(x -> mean(x), copy(select(row1, Symbol.(vars_to_add)))) #lambda fn for cols
+		row2 = filter(row -> row[:Season] == season && row[:TeamID] == team2, fdat);
+		row2 = mapcols(x -> mean(x), copy(select(row2, Symbol.(vars_to_add)))) #lambda fn for cols
+		out = DataFrame()
+		# small loop to take diffs
+		for var in vars_to_add
+			out[Symbol("Diff_"*var)] = row1[Symbol(var)]-row2[Symbol(var)]
+		end
+		# append the final data
+		append!(final_out, out)
 	end
-
-	pred_vars = names(df_concat)
-	df_concat.WTeamID = df.WTeamID
-	df_concat.LTeamID = df.LTeamID
-	df_concat.Season = df.Season
-
-	df_wins = copy(df_concat)
-	df_wins.Result = 1
-
-	df_losses = copy(df_concat[:, [:Season, :WTeamID, :LTeamID]])
-	df_losses[:, pred_vars] = mapcols(x -> x*-1, copy(select(df_concat, pred_vars))) #lambda fn for cols
-	df_losses.Result = 0
-
-	df_out = [df_wins; df_losses]
-	return dropmissing(df_out)
+	return final_out
 end
