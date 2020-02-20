@@ -30,9 +30,9 @@ elo_features = get_elo_tourney_diffs(season_elos)
 seed_submission = get_seed_submission_diffs(submission_sample, df_seeds)
 eff_submission = get_eff_submission_diffs(submission_sample, effdat) #see above
 elo_submission = get_elo_submission_diffs(submission_sample, season_elos)
+@test size(seed_submission, 1) == size(eff_submission, 1) == size(elo_submission, 1)
 
-
-
+##########################################################################
 
 # Submission data
 submission_df = gen_seed_features(submission_sample, df_seeds);
