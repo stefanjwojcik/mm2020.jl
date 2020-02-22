@@ -87,23 +87,24 @@ function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/
 	names!(fdat, alt_names)
 
 	# create two functions - for when team wins/loses for merging
-	Wfdat = copy(fdat)
+	Wfdat = copy(fdat_mean)
 	Wfdat_names = Symbol.([x == "Season" ? x : "W"*x for x in String.(names(Wfdat))])
 	names!(Wfdat, Wfdat_names)
-	Lfdat = copy(fdat)
+	Lfdat = copy(fdat_mean)
 	Lfdat_names = Symbol.([x == "Season" ? x : "L"*x for x in String.(names(Lfdat))])
 	names!(Lfdat, Lfdat_names)
-	return Wfdat, Lfdat, fdat
+	return Wfdat, Lfdat, fdat_mean
 end
 
 function get_eff_tourney_diffs(Wfdat, Lfdat, fdat)
 	# NEED TO MAKE THIS COMPATIBLE WITH THE REST OF THE DATA: TAKE DIFFS AND CONCATENATE
 	df_tour = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
-	deletecols!(df_tour, [:DayNum, :WScore, :LScore, :WLoc, :NumOT])
+
+	deletecols!(df_tour, [ :WScore, :LScore, :WLoc, :NumOT])
 	df = join(df_tour, Wfdat, on = [:Season, :WTeamID], kind = :left)
 	df = join(df, Lfdat, on = [:Season, :LTeamID], kind = :left)
 
-	# Option to create two functions - one to create
+		# Option to create two functions - one to create
 	df_concat = DataFrame()
 	vars_to_add = [String(x) for x in names(fdat) if !in(x, [:Season, :TeamID])]
 	for var in vars_to_add

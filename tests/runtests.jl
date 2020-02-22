@@ -16,15 +16,27 @@ df_seeds = CSVFiles.load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/
 
 ##############################################################
 # Create training features for valid historical data
-# seeds
+# SEEDS
 seeds_features = make_seeds()
-# efficiency
+# EFFICIENCY
 Wfdat, Lfdat, effdat = eff_stat_seasonal_means()
 eff_features = get_eff_tourney_diffs(Wfdat, Lfdat, effdat)
 # ELO
 season_elos = elo_ranks(Elo())
 elo_features = get_elo_tourney_diffs(season_elos)
-### Loading the basic seeds data
+### Full feature dataset
+seeds_features_min = filter(row -> row[:Season] >= 2003, seeds_features)
+eff_features_min = filter(row -> row[:Season] >= 2003, eff_features)
+elo_features_min = filter(row -> row[:Season] >= 2003, elo_features)
+
+# create full stub
+seeds_features_min.ID = seeds_features_min.Season*seeds_features_min.WTeamID*seeds_features_min.LTeamID
+stub = join(seeds_features_min[:, [:Season, :WTeamID, :LTeamID, :SeedDiff]],
+    eff_features_min,
+    on = [:WTeamID, :LTeamID, :Season,], kind = :left);
+
+exclude = [:Result, :Season, :LTeamID]
+eff_features_min[:, filter(x -> x ∉ , names(eff_features_min))]
 
 # Create features required to make submission predictions
 seed_submission = get_seed_submission_diffs(submission_sample, df_seeds)
@@ -32,13 +44,16 @@ eff_submission = get_eff_submission_diffs(submission_sample, effdat) #see above
 elo_submission = get_elo_submission_diffs(submission_sample, season_elos)
 @test size(seed_submission, 1) == size(eff_submission, 1) == size(elo_submission, 1)
 
+# Create full submission dataset
+submission_features = hcat(seed_submission, eff_submission, elo_submission)
+
 ##########################################################################
 
-# Submission data
-submission_df = gen_seed_features(submission_sample, df_seeds);
+# TRAINING
 
 # Join the two feature sets
-featurecols = [:SeedDiff]
+featurecols = [names(seed_submission), names(eff_submission), names(elo_submission)]
+featurecols = collect(Iterators.flatten(featurecols))
 fullX = [seeds[featurecols]; submission_df[featurecols]]
 fullY = [seeds.Result; repeat([0], size(submission_df, 1))]
 
