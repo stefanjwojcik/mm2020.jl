@@ -30,13 +30,12 @@ eff_features_min = filter(row -> row[:Season] >= 2003, eff_features)
 elo_features_min = filter(row -> row[:Season] >= 2003, elo_features)
 
 # create full stub
-seeds_features_min.ID = seeds_features_min.Season*seeds_features_min.WTeamID*seeds_features_min.LTeamID
-stub = join(seeds_features_min[:, [:Season, :WTeamID, :LTeamID, :SeedDiff]],
-    eff_features_min,
-    on = [:WTeamID, :LTeamID, :Season,], kind = :left);
 
-exclude = [:Result, :Season, :LTeamID]
-eff_features_min[:, filter(x -> x ∉ , names(eff_features_min))]
+stub = join(seeds_features_min, eff_features_min, on = [:WTeamID, :LTeamID, :Season, :Result], kind = :left);
+fdata = join(stub, elo_features, on = [:WTeamID, :LTeamID, :Season, :Result], kind = :left);
+
+exclude = [:Result, :Season, :LTeamID, :WTeamID]
+deletecols!(fdata, exclude)
 
 # Create features required to make submission predictions
 seed_submission = get_seed_submission_diffs(submission_sample, df_seeds)
@@ -54,17 +53,23 @@ submission_features = hcat(seed_submission, eff_submission, elo_submission)
 # Join the two feature sets
 featurecols = [names(seed_submission), names(eff_submission), names(elo_submission)]
 featurecols = collect(Iterators.flatten(featurecols))
-fullX = [seeds[featurecols]; submission_df[featurecols]]
-fullY = [seeds.Result; repeat([0], size(submission_df, 1))]
+fullX = [fdata[featurecols]; submission_features[featurecols]]
+fullY = [seeds_features_min.Result; repeat([0], size(submission_features, 1))]
 
 # create array of training and testing rows
-train, test = partition(eachindex(ncaa_df.Result), 0.7, shuffle=true)
-validate = [size(ncaa_df, 1):size(fullY, 1)...]
+train, test = partition(eachindex(seeds_features_min.Result), 0.7, shuffle=true)
+validate = [size(fdata, 1):size(fullY, 1)...]
 
 # Recode result to win/ loss
 y = @pipe categorical(fullY) |> recode(_, 0=>"lose",1=>"win");
 tree_model = @load DecisionTreeClassifier verbosity=1
 tree = machine(tree_model, fullX, y)
+
+@load SVC pkg=LIBSVM
+
+svc_mdl = SVC()
+svc = machine(svc_mdl, fullX, fullY)
+
 
 # Train the model!
 fit!(tree, rows = train)
