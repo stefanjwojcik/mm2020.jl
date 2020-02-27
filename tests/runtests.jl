@@ -144,7 +144,8 @@ fit!(mtm, rows=train)
 #######################################
 rf = @load RandomForestClassifier pkg="ScikitLearn"
 
-rf_model = machine(rf, fullX, y)
+rf_forest = EnsembleModel(atom=rf, n=1);
+rf_model = machine(rf_forest, fullX, y)
 fit!(rf_model, rows = train)
 yhat = predict(rf_model, rows=test)
 mce = cross_entropy(yhat, y[test]) |> mean
@@ -182,6 +183,7 @@ yhat = predict(xg_model, rows=test)
 mce = cross_entropy(yhat, y[test]) |> mean
 accuracy(predict_mode(xg_model, rows=test), y[test])
 
+#########################################################
 # This is a working single model for XGBOOST Classifier
 xgb_forest = EnsembleModel(atom=xgb, n=1000);
 xg_model = machine(xgb_forest, fullX_co, y)
@@ -189,43 +191,8 @@ fit!(xg_model, rows = train)
 yhat = predict(xg_model, rows=test)
 mce = cross_entropy(yhat, y[test]) |> mean
 accuracy(predict_mode(xg_model, rows=test), y[test])
+#######################################################3
 
-
-sgd = @load RidgeClassifier pkg = "ScikitLearn"
-fullX_co = coerce(fullX, Count=>Continuous)
-y_co = coerce(DataFrame(y=y), Count=>Bool)
-sgd_model = machine(sgd, fullX_co, DataFrame(y=y).y)
-fit!(sgd_model, rows = train)
-yhat = predict(sgd_model, rows=test)
-mce = cross_entropy(yhat, y[test]) |> mean
-accuracy(predict(sgd_model, rows=test), y[test])
-
-##################################
-
-fullX_co = coerce(fullX, Count=>Continuous)
-y = @pipe Int64(y) |> recode(_, "lose"=>0,"win"=>1);
-y_co = coerce(DataFrame(y=y), Count=>Binary)
-
-atom = @load RidgeClassifier pkg = "ScikitLearn"
-ensemble = EnsembleModel(atom=atom)
-r_alpha = range(ensemble, :(atom.alpha), lower = .1, upper = 10)
-
-self_tuning_ridge_model = TunedModel(model=ensemble,
-                                             tuning=Grid(goal=30),
-                                             resampling=CV(nfolds=6),
-                                             range=r_alpha,
-                                             measure=LogitDistLoss);
-
- self_tuning_ridge_model = TunedModel(model=ensemble,
-                                              tuning=Grid(goal=30),
-                                              resampling=CV(nfolds=6),
-                                              range=r_alpha)
-
-ens_model = machine(self_tuning_ridge_model, fullX_co, y_co.y)
-
-fit!(ens_model, rows = train)
-
-######################################3
 # get parameter values and misclassification scores
 miss_rates = ens_model.report.plotting.measurements[:, 1]
 alphas = ens_model.report.plotting.parameter_values[:, 1]
@@ -248,3 +215,8 @@ fit!(tree, rows = train)
 yhat = predict(tree, rows=test)
 mce = cross_entropy(yhat, y[test]) |> mean
 accuracy(predict_mode(tree, rows=test), y[test])
+
+# Just checking on a GLM
+df = hcat(fullY, fullX)
+myform = @formula(y ~ SeedDiff + Diff_Pts_mean_mean)
+mod = glm(myform, df[train, :], Binomial(), ProbitLink())
