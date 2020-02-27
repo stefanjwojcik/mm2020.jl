@@ -70,19 +70,13 @@ validate = [2230:size(fullY, 1)...]
 y = @pipe categorical(fullY.y) |> recode(_, 0=>"lose",1=>"win");
 
 
-################ WORKING EXAMPLE
-tree_model = @load DecisionTreeClassifier verbosity=1
-tree = machine(tree_model, fullX[:, [:SeedDiff]], y)
-fit!(tree, rows = train)
-yhat = predict(tree, rows=test)
-mce = cross_entropy(yhat, y[test]) |> mean
-accuracy(predict_mode(tree, rows=test), y[test])
 #################################################
 @load XGBoostClassifier()
 xgb = XGBoostClassifier()
 fullX_co = coerce(fullX, Count=>Continuous)
 xgbm = machine(xgb, fullX_co, y)
 
+# measuring the number of rounds
 r = range(xgb, :num_round, lower=1, upper=50)
 curve = learning_curve!(xgbm, resampling=CV(nfolds=3),
                         range=r, resolution=20,
@@ -95,6 +89,9 @@ xgb.num_round = 6
 xgb.max_depth = 3
 xgb.min_child_weight = 4.2105263157894735
 xgb.gamma = 11
+xgb.eta = .35
+xgb.subsample = 0.6142857142857143
+xgb.colsample_bytree = 1.0
 r1 = range(xgb, :max_depth, lower = 3, upper = 10)
 r2 = range(xgb, :min_child_weight, lower=0, upper=5)
 tm = TunedModel(model = xgb, tuning = Grid(resolution = 20),
@@ -116,7 +113,35 @@ curve = learning_curve!(xgbm, resampling=CV(),
                         measure=cross_entropy);
 plot(curve.parameter_values, curve.measurements)
 ####################################################
+# TUNING ETA
+r = range(xgb, :eta, lower=.01, upper=.4)
+tm = TunedModel(model = xgb, tuning = Grid(resolution = 20),
+        resampling = CV(rng=11), ranges=r,
+        measure = cross_entropy)
+mtm = machine(tm, fullX_co, y)
+fit!(mtm, rows = train)
+######################################
+# Tuning subsample and colsample
+r1 = range(xgb, :subsample, lower=0.1, upper=1.0)
+r2 = range(xgb, :colsample_bytree, lower=0.1, upper=1.0)
+tm = TunedModel(model=xgb, tuning=Grid(resolution=8),
+                resampling=CV(rng=234), ranges=[r1,r2],
+                measure=cross_entropy)
+mtm = machine(tm, fullX_co, y)
+fit!(mtm, rows=train)
 
+#########################################
+# Tuning lam and colsample
+r1 = range(xgb, :subsample, lower=0.1, upper=1.0)
+r2 = range(xgb, :colsample_bytree, lower=0.1, upper=1.0)
+tm = TunedModel(model=xgb, tuning=Grid(resolution=8),
+                resampling=CV(rng=234), ranges=[r1,r2],
+                measure=cross_entropy)
+mtm = machine(tm, fullX_co, y)
+fit!(mtm, rows=train)
+
+
+#######################################
 rf = @load RandomForestClassifier pkg="ScikitLearn"
 
 rf_model = machine(rf, fullX, y)
@@ -142,14 +167,29 @@ final_prediction = predict_mode(tree, rows=validate)
 
 
 xg = @load GradientBoostingClassifier pkg = "ScikitLearn"
-
 fullX_co = coerce(fullX, Count=>Continuous)
-y_co = coerce(DataFrame(y=y), Count=>Bool)
-xg_model = machine(xg, fullX_co, DataFrame(y=y).y)
+xg_model = machine(xg, fullX_co, y)
 fit!(xg_model, rows = train)
 yhat = predict(xg_model, rows=test)
 mce = cross_entropy(yhat, y[test]) |> mean
-accuracy(predict_mode(ada_model, rows=test), y[test])
+accuracy(predict_mode(xg_model, rows=test), y[test])
+
+@load XGBoostClassifier()
+xgb = XGBoostClassifier()
+xg_model = machine(xgb, fullX_co, y)
+fit!(xg_model, rows = train)
+yhat = predict(xg_model, rows=test)
+mce = cross_entropy(yhat, y[test]) |> mean
+accuracy(predict_mode(xg_model, rows=test), y[test])
+
+# This is a working single model for XGBOOST Classifier
+xgb_forest = EnsembleModel(atom=xgb, n=1000);
+xg_model = machine(xgb_forest, fullX_co, y)
+fit!(xg_model, rows = train)
+yhat = predict(xg_model, rows=test)
+mce = cross_entropy(yhat, y[test]) |> mean
+accuracy(predict_mode(xg_model, rows=test), y[test])
+
 
 sgd = @load RidgeClassifier pkg = "ScikitLearn"
 fullX_co = coerce(fullX, Count=>Continuous)
@@ -201,3 +241,10 @@ accuracy(predict(ens_model, rows=test), y[test])
 atom = @load RidgeRegressor pkg=MultivariateStats
 mach = machine(ensemble, X, y)
 ########################################
+################ WORKING EXAMPLE
+tree_model = @load DecisionTreeClassifier verbosity=1
+tree = machine(tree_model, fullX[:, [:SeedDiff]], y)
+fit!(tree, rows = train)
+yhat = predict(tree, rows=test)
+mce = cross_entropy(yhat, y[test]) |> mean
+accuracy(predict_mode(tree, rows=test), y[test])

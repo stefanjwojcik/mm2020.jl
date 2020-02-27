@@ -84,7 +84,7 @@ function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/
 	fdat = [Wmean;Lmean] # this is how you concatenate in JULIA
 	fdat_mean = aggregate(fdat, [:TeamID, :Season], mean)
 	alt_names = [Symbol(replace(String(x), "_mean" => "")) for x in names(fdat_mean)]
-	names!(fdat, alt_names)
+	names!(fdat_mean, alt_names)
 
 	# create two functions - for when team wins/loses for merging
 	Wfdat = copy(fdat_mean)
