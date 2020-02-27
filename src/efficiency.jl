@@ -62,10 +62,14 @@ function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/
 	df.WRP = (df.WDR + df.WOR) ./ (df.WDR + df.WDR + df.LDR + df.LOR)
 	df.LRP = (df.LDR + df.LOR) ./ (df.WDR + df.WDR + df.LDR + df.LOR)
 	# Drop original measures
-	deletecols!(df, [:WFGM, :WFGA, :WFGM3, :WFGA3, :WFTM,
-	:WFTA, :WOR, :WDR, :WAst, :WTO, :WStl, :WBlk, :WPF, :WLoc])
-	deletecols!(df, [:LFGM, :LFGA, :LFGM3, :LFGA3, :LFTM,
-	:LFTA, :LOR, :LDR, :LAst, :LTO, :LStl, :LBlk, :LPF])
+	#deletecols!(df, [:WFGM, :WFGA, :WFGM3, :WFGA3, :WFTM,
+	#:WFTA, :WOR, :WDR, :WAst, :WTO, :WStl, :WBlk, :WPF, :WLoc])
+	#deletecols!(df, [:LFGM, :LFGA, :LFGM3, :LFGA3, :LFTM,
+	#:LFTA, :LOR, :LDR, :LAst, :LTO, :LStl, :LBlk, :LPF])
+	
+	#instead just dropping a few
+	deletecols!(df, [:WLoc])
+
 	# take mean, min, max of each of the advanced measures
 	W_cols = [!in(x, [ "WScore"]) & occursin(r"W|Season", x)  for x in String.(names(df))]	# make win and loss average datasets
 	L_cols = [!in(x, [ "LScore"]) & occursin(r"L|Season", x)  for x in String.(names(df))]	# make win and loss average datasets
