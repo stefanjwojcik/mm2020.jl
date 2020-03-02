@@ -67,6 +67,7 @@ train, test = partition(1:2230, 0.7, shuffle=true)
 validate = [2230:size(fullY, 1)...]
 
 # Recode result to win/ loss
+fullY = DataFrame(y = fullY)
 y = @pipe categorical(fullY.y) |> recode(_, 0=>"lose",1=>"win");
 
 
@@ -220,3 +221,23 @@ accuracy(predict_mode(tree, rows=test), y[test])
 df = hcat(fullY, fullX)
 myform = @formula(y ~ SeedDiff + Diff_Pts_mean_mean)
 mod = glm(myform, df[train, :], Binomial(), ProbitLink())
+
+
+#### BOOSTING ALGOS
+
+# HOW TO DO WEIGHTED BOOSTING
+
+# INITIALIZE WEIGHTS
+W = 1/length(y) .* fill(1, length(y)) # weights
+y = [0,1,1,0,0]
+
+# For M in M_ALL - CREATE PREDICTION
+pred_g = [1, 0, 1, 0, 0]
+# Generate the Error of the model Weights times indicator
+err_m = sum(W .* (y .!= pred_g)) / sum(W)
+# Alpha, transformation of the error (log(0)=1)
+α_m = log( (1 - err_m) / err_m)
+# update the weights
+W .= W .* exp.(α_m .* (y .!= pred_g))
+
+# FINAL OUTPUT - take the sum of all models =  alpha_m * prediction_m
