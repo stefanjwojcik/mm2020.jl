@@ -24,7 +24,9 @@ export  make_seeds,
         Elo,
         elo_ranks,
         get_elo_tourney_diffs,
-        get_elo_submission_diffs
+        get_elo_submission_diffs,
+        make_momentum,
+        make_momentum_sub
 
 
 ##############################################################################
