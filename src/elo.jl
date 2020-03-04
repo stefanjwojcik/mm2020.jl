@@ -128,13 +128,12 @@ function elo_ranks(elo_obj::Elo)
 	season_elos
 end
 
-function get_elo_tourney_diffs(season_elos)
+function get_elo_tourney_diffs(season_elos, df_tour)
 	# create difference scores
 	df_winelo, df_losselo = copy(season_elos), copy(season_elos)
 	rename!(df_winelo, :team_id => :WTeamID, :season => :Season, :season_elo => :W_elo)
 	rename!(df_losselo, :team_id => :LTeamID, :season => :Season, :season_elo => :L_elo)
 	# Merge in the compact results
-	df_tour = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 	df_dummy = join(df_tour, df_winelo, on = [:Season, :WTeamID], kind = :left)
 	df_concat = join(df_dummy, df_losselo, on = [:Season, :LTeamID])
 	df_concat.Elo_diff = df_concat.W_elo - df_concat.L_elo
