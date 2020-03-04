@@ -38,5 +38,6 @@ export  make_seeds,
 include("efficiency.jl")
 include("seeds.jl")
 include("elo.jl")
+include("momentum.jl")
 
 end # module
