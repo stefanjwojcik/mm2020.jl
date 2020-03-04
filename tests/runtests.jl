@@ -13,17 +13,21 @@ submission_sample = CSVFiles.load("/home/swojcik/github/mm2020.jl/data/MSampleSu
 
 # Get the source seeds:
 df_seeds = CSVFiles.load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneySeeds.csv") |> DataFrame
-
+season_df = CSVFiles.load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MRegularSeasonCompactResults.csv") |> DataFrame
+season_df_detail = CSVFiles.load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MRegularSeasonDetailedResults.csv") |> DataFrame
+tourney_df  = CSVFiles.load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 ##############################################################
 # Create training features for valid historical data
 # SEEDS
-seeds_features = make_seeds()
+seeds_features = make_seeds(df_seeds, tourney_df)
 # EFFICIENCY
-Wfdat, Lfdat, effdat = eff_stat_seasonal_means()
-eff_features = get_eff_tourney_diffs(Wfdat, Lfdat, effdat)
+Wfdat, Lfdat, effdat = eff_stat_seasonal_means(season_df_detail)
+eff_features = get_eff_tourney_diffs(Wfdat, Lfdat, effdat, tourney_df)
 # ELO
 season_elos = elo_ranks(Elo())
-elo_features = get_elo_tourney_diffs(season_elos)
+elo_features = get_elo_tourney_diffs(season_elos, tourney_df)
+# Momentum
+momentum_features = make_momentum(tourney_df, season_df)
 ### Full feature dataset
 seeds_features_min = filter(row -> row[:Season] >= 2003, seeds_features)
 eff_features_min = filter(row -> row[:Season] >= 2003, eff_features)

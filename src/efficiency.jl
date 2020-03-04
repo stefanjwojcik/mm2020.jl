@@ -6,12 +6,7 @@ eff_stats()
 This file is responsible for creating 'advanced' features related to team efficiencies
 """
 
-function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MRegularSeasonDetailedResults.csv")
-	println("loading...")
-	# read the file0
-	df = load(df_path) |> DataFrame;
-
-	#
+function eff_stat_seasonal_means(df) # this is season_df_detail
 	#Points Winning/Losing Team
 	df.WPts = 2*df.WFGM + df.WFGM3 + df.WFTM
 	df.LPts = 2*df.LFGM + df.LFGM3 + df.LFTM
@@ -66,7 +61,7 @@ function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/
 	#:WFTA, :WOR, :WDR, :WAst, :WTO, :WStl, :WBlk, :WPF, :WLoc])
 	#deletecols!(df, [:LFGM, :LFGA, :LFGM3, :LFGA3, :LFTM,
 	#:LFTA, :LOR, :LDR, :LAst, :LTO, :LStl, :LBlk, :LPF])
-	
+
 	#instead just dropping a few
 	deletecols!(df, [:WLoc])
 
@@ -100,7 +95,7 @@ function eff_stat_seasonal_means(df_path = "/home/swojcik/github/mm2020.jl/data/
 	return Wfdat, Lfdat, fdat_mean
 end
 
-function get_eff_tourney_diffs(Wfdat, Lfdat, fdat)
+function get_eff_tourney_diffs(Wfdat, Lfdat, fdat, df_tour)
 	# NEED TO MAKE THIS COMPATIBLE WITH THE REST OF THE DATA: TAKE DIFFS AND CONCATENATE
 	df_tour = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MNCAATourneyCompactResults.csv") |> DataFrame
 

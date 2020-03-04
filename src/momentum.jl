@@ -1,6 +1,6 @@
 ## create momentum scores for the last TK days of the season
 
-season_df = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MRegularSeasonCompactResults.csv") |> DataFrame
+#season_df = load("/home/swojcik/github/mm2020.jl/data/MDataFiles_Stage1/MRegularSeasonCompactResults.csv") |> DataFrame
 
 # Get the final days
 
@@ -45,7 +45,7 @@ function make_momentum(tourney_df, season_df)
 end
 
 function make_momentum_sub(submission_sample, momentum_df)
-	submission_sample.ScoreDiff = 0
+	submission_sample.ScoreDiff = 0.0
 	for row in eachrow(submission_sample)
 		season, team1, team2 = parse.(Int, split(row.ID, "_"))
 		row1 = filter(row -> row[:Season] == season && row[:WTeamID] == team1, momentum_df);
