@@ -36,7 +36,7 @@ function make_momentum(tourney_df, season_df)
 	df_wins.Result = 1
 
 	df_losses = copy(dummy[[:Season, :WTeamID, :LTeamID]])
-	df_losses.ScoreDiff = df_concat.ScoreDiff*-1
+	df_losses.ScoreDiff = df_losses.ScoreDiff*-1
 	df_losses.Result = 0
 
 	println("done")
