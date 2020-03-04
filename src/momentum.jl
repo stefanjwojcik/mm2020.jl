@@ -23,8 +23,10 @@ function make_momentum(tourney_df, season_df)
 
 	# aggregate team diffs from end of season
     scores = aggregate(groupby(fulldf, [:TeamID, :Season]), median)
+	rename!(scores, :ScoreDiff_median => :ScoreDiff)
+	scores_out = copy(scores)
 	# rename the colums and merge to winning
-	rename!(scores, :ScoreDiff_median => :WScores, :TeamID => :WTeamID)
+	rename!(scores, :ScoreDiff => :WScores, :TeamID => :WTeamID)
 	dummy = join(tourney_df, scores, on = [:WTeamID, :Season], kind = :left)
 	# rename the columns and merge to losing
 	rename!(scores, :WTeamID => :LTeamID, :WScores => :LScores)
@@ -41,6 +43,7 @@ function make_momentum(tourney_df, season_df)
 
 	println("done")
 	momentum_df = [df_wins; df_losses]
+	return momentum_df, scores_out
 
 end
 
@@ -49,7 +52,9 @@ function make_momentum_sub(submission_sample, momentum_df)
 	for row in eachrow(submission_sample)
 		season, team1, team2 = parse.(Int, split(row.ID, "_"))
 		row1 = filter(row -> row[:Season] == season && row[:WTeamID] == team1, momentum_df);
+		size(row1)[1] && continue
 		row2 = filter(row -> row[:Season] == season && row[:LTeamID] == team2, momentum_df);
+		size(row2)[1] && continue
 		submission_sample.ScoreDiff[getfield(row, :row)] = (row1.ScoreDiff - row2.ScoreDiff)[1]
 	end
 	return submission_sample[:, [:ScoreDiff]]
