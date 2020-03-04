@@ -42,8 +42,8 @@ function make_momentum(tourney_df, season_df)
 	df_losses.Result = 0
 
 	println("done")
-	momentum_df = [df_wins; df_losses]
-	return momentum_df, scores_out
+	momentum_features = [df_wins; df_losses]
+	return momentum_features, scores_out
 
 end
 
